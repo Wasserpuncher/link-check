@@ -18,7 +18,7 @@ python link_check.py *.md *.html --timeout 15 --workers 16
 python link_check.py page.html --allow 429    # accept rate-limit responses as alive
 ```
 
-It reads Markdown, HTML or plain text and finds links three ways: Markdown `[text](url)`, HTML `href=`/`src=`, and bare URLs in running text. URLs inside fenced code blocks are treated as examples and skipped by default — pass `--include-code` to check those too. `2xx` and `3xx` count as alive; a server that refuses a `HEAD` is retried with `GET`. The exit status is `1` if any link is broken and `0` if all resolve:
+It reads Markdown, HTML or plain text and finds links three ways: Markdown `[text](url)`, HTML `href=`/`src=`, and bare URLs in running text. HTML entities are decoded first, so an `href="…?a=1&amp;b=2"` is checked as the `&` URL a browser would actually request; a URL with balanced parentheses like `…/Foo_(bar)` is kept whole. URLs inside fenced code blocks are treated as examples and skipped by default — pass `--include-code` to check those too. `2xx` and `3xx` count as alive; a server that refuses a `HEAD` is retried with `GET`. The exit status is `1` if any link is broken and `0` if all resolve:
 
 ```
 README.md: 5 link(s), 1 broken

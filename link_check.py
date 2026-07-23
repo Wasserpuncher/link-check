@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import argparse
 import concurrent.futures
+import html
 import re
 import sys
 import urllib.error
@@ -30,8 +31,9 @@ __version__ = "1.0.0"
 _MD = re.compile(r'\[[^\]]*\]\(\s*<?(https?://[^)\s>]+)>?\s*(?:"[^"]*")?\)')
 # HTML href="url" / src='url'
 _ATTR = re.compile(r'(?:href|src)\s*=\s*["\'](https?://[^"\']+)["\']', re.IGNORECASE)
-# Bare URL anywhere in the text.
-_BARE = re.compile(r'https?://[^\s<>"\')\]]+')
+# Bare URL anywhere in the text. Parens are allowed and balanced in _clean(),
+# so URLs like .../Foo_(bar) survive while a trailing ")" delimiter is trimmed.
+_BARE = re.compile(r'https?://[^\s<>"\'\]]+')
 # Fenced code blocks (``` ... ``` or ~~~ ... ~~~): examples, not real links.
 _FENCE = re.compile(r'```.*?```|~~~.*?~~~', re.DOTALL)
 
@@ -41,6 +43,21 @@ _TRIM = '.,;:!?)]}\'"'
 def strip_code_fences(text: str) -> str:
     """Remove fenced code blocks so example URLs in them are not checked."""
     return _FENCE.sub("", text)
+
+
+def _clean(url: str) -> str:
+    """Decode HTML entities and trim trailing punctuation from a raw URL.
+
+    ``&amp;`` etc. are decoded so the URL matches what a browser would request.
+    A trailing ``)`` is kept when it balances a ``(`` inside the URL (so
+    ``.../Foo_(bar)`` survives) and stripped when it is just a delimiter.
+    """
+    url = html.unescape(url)
+    while url and url[-1] in _TRIM:
+        if url[-1] == ")" and url.count("(") >= url.count(")"):
+            break
+        url = url[:-1]
+    return url
 
 
 def extract_urls(text: str, skip_code: bool = True) -> list[str]:
@@ -58,7 +75,7 @@ def extract_urls(text: str, skip_code: bool = True) -> list[str]:
     seen: set[str] = set()
     out: list[str] = []
     for u in found:
-        u = u.rstrip(_TRIM)
+        u = _clean(u)
         if u and u not in seen:
             seen.add(u)
             out.append(u)

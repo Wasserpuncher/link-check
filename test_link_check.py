@@ -78,6 +78,23 @@ class LinkCheckTest(unittest.TestCase):
         text = "```\nsee http://inside.example/code\n```"
         self.assertIn("http://inside.example/code", extract_urls(text, skip_code=False))
 
+    def test_decodes_html_entities(self):
+        # &amp; in an href is really & — the URL a browser would request
+        text = '<a href="http://api.example/v1?lat=1&amp;lon=2&amp;days=8">x</a>'
+        self.assertIn("http://api.example/v1?lat=1&lon=2&days=8", extract_urls(text))
+
+    def test_keeps_balanced_parens_but_trims_delimiter(self):
+        # a URL that legitimately contains () must survive
+        self.assertIn(
+            "https://de.wikipedia.org/wiki/Front_(Meteorologie)",
+            extract_urls("see https://de.wikipedia.org/wiki/Front_(Meteorologie) now"),
+        )
+        # a trailing ) that is only a delimiter must be trimmed
+        self.assertIn(
+            "https://example.com/x",
+            extract_urls("(https://example.com/x)"),
+        )
+
     # --- live checking against the local server ---
     def test_ok(self):
         self.assertTrue(check_url(self.base + "/ok").ok)
