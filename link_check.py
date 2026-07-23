@@ -33,7 +33,9 @@ _MD = re.compile(r'\[[^\]]*\]\(\s*<?(https?://[^)\s>]+)>?\s*(?:"[^"]*")?\)')
 _ATTR = re.compile(r'(?:href|src)\s*=\s*["\'](https?://[^"\']+)["\']', re.IGNORECASE)
 # Bare URL anywhere in the text. Parens are allowed and balanced in _clean(),
 # so URLs like .../Foo_(bar) survive while a trailing ")" delimiter is trimmed.
-_BARE = re.compile(r'https?://[^\s<>"\'\]]+')
+# Markdown emphasis/code markers (* and `) are excluded so a link written as
+# [text](url)**bold** does not swallow the trailing "**" into the URL.
+_BARE = re.compile(r'https?://[^\s<>"\'\]*`]+')
 # Fenced code blocks (``` ... ``` or ~~~ ... ~~~): examples, not real links.
 _FENCE = re.compile(r'```.*?```|~~~.*?~~~', re.DOTALL)
 

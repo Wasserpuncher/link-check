@@ -83,6 +83,12 @@ class LinkCheckTest(unittest.TestCase):
         text = '<a href="http://api.example/v1?lat=1&amp;lon=2&amp;days=8">x</a>'
         self.assertIn("http://api.example/v1?lat=1&lon=2&days=8", extract_urls(text))
 
+    def test_markdown_link_followed_by_bold_does_not_overcapture(self):
+        # [text](url)**bold** must yield the clean url, not "url)**"
+        urls = extract_urls("**[Suite](https://github.com/nst/JSONTestSuite)** done")
+        self.assertIn("https://github.com/nst/JSONTestSuite", urls)
+        self.assertNotIn("https://github.com/nst/JSONTestSuite)**", urls)
+
     def test_keeps_balanced_parens_but_trims_delimiter(self):
         # a URL that legitimately contains () must survive
         self.assertIn(
